@@ -43,6 +43,16 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
+      - name: Stop previous instance
+        if: always()
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            cd tracker/tracker-0.0.1.jar && kill -9 $(cat application.pid)
+          host: ${{ secrets.HOST }}
+          user: ${{ secrets.SSH_USER }}
+          pass: ${{ secrets.SSH_PASSWORD }}
+          args: "-tt"
       - name: Run the application on remote server
         if: always()
         uses: fifsky/ssh-action@master
