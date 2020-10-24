@@ -19,6 +19,11 @@ jobs:
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew build
+    - name: Save jar artifact
+      uses: actions/upload-artifact@master
+      with:
+        name: tracker
+        path: build/libs/tracker-0.0.1.jar
 
   deploy:
     runs-on: ubuntu-latest
@@ -26,10 +31,10 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 1.11
-        uses: actions/setup-java@v1
+      - uses: actions/download-artifact@v2
         with:
-          java-version: 1.11
+          name: tracker
+          path: build/libs/tracker-0.0.1.jar
       - name: Deploy the package to the remote server
         uses: garygrossgarten/github-action-scp@release
         with:
