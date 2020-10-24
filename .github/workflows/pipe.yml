@@ -53,13 +53,3 @@ jobs:
           user: ${{ secrets.SSH_USER }}
           pass: ${{ secrets.SSH_PASSWORD }}
           args: "-tt"
-      - name: Save PID
-        if: always()
-        uses: fifsky/ssh-action@master
-        with:
-          command: |
-            echo $$ > tracker/tracker-0.0.1.jar/pid
-          host: ${{ secrets.HOST }}
-          user: ${{ secrets.SSH_USER }}
-          pass: ${{ secrets.SSH_PASSWORD }}
-          args: "-tt"
