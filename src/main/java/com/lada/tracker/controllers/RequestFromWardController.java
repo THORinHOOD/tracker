@@ -10,6 +10,7 @@ import com.lada.tracker.entities.RequestFromWard;
 import com.lada.tracker.repositories.MessageRepository;
 import com.lada.tracker.repositories.RequestFromWardRepository;
 import com.lada.tracker.services.RequestService;
+import com.lada.tracker.services.models.KanbanColumn;
 import com.lada.tracker.utils.ResultWrapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,10 +34,16 @@ public class RequestFromWardController {
         this.messageRepository = messageRepository;
     }
 
-    @GetMapping
-    public List<com.lada.tracker.entities.RequestFromWard> getRequestsFromWards(@RequestParam int status) {
+    @GetMapping("/by_status")
+    public List<RequestFromWard> getRequestsFromWards(@RequestParam int status) {
         return requestFromWardRepository.findAllByStatus(status);
     }
+
+    @GetMapping
+    public List<KanbanColumn> getAllWardRequests() {
+        return requestService.getKanbanBoard();
+    }
+
 
     @PostMapping("/change_status")
     public ResponseEntity<String> changeRequestWardStatus(@RequestBody RequestChangeStatus requestChangeStatus) {

@@ -4,23 +4,41 @@ import com.lada.tracker.controllers.dto.RequestFromWardDtoWithId;
 import com.lada.tracker.entities.RequestFromWard;
 import com.lada.tracker.entities.RequestFromWardTransaction;
 import com.lada.tracker.repositories.RequestFromWardRepository;
+import com.lada.tracker.repositories.RequestFromWardStatusRepository;
 import com.lada.tracker.repositories.RequestFromWardTransactionRepository;
+import com.lada.tracker.services.models.KanbanColumn;
 import com.lada.tracker.utils.ResultWrapper;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Service
 public class RequestService {
 
-    private RequestFromWardRepository requestFromWardRepository;
-    private RequestFromWardTransactionRepository requestFromWardTransactionRepository;
+    private final RequestFromWardRepository requestFromWardRepository;
+    private final RequestFromWardTransactionRepository requestFromWardTransactionRepository;
+    private final RequestFromWardStatusRepository requestFromWardStatusRepository;
 
     public RequestService(RequestFromWardRepository requestFromWardRepository,
-                          RequestFromWardTransactionRepository requestFromWardTransactionRepository) {
+                          RequestFromWardTransactionRepository requestFromWardTransactionRepository,
+                          RequestFromWardStatusRepository requestFromWardStatusRepository) {
         this.requestFromWardRepository = requestFromWardRepository;
         this.requestFromWardTransactionRepository = requestFromWardTransactionRepository;
+        this.requestFromWardStatusRepository = requestFromWardStatusRepository;
+    }
+
+    public List<KanbanColumn> getKanbanBoard() {
+        return requestFromWardStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+                .map(status ->
+                    KanbanColumn.builder()
+                        .statusInfo(status)
+                        .requests(requestFromWardRepository.findAllByStatus(status.getId()))
+                        .build())
+                .collect(Collectors.toList());
     }
 
     public ResultWrapper changeRequestFromWard(RequestFromWardDtoWithId newFields) {
