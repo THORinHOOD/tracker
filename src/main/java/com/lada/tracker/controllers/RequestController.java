@@ -50,8 +50,8 @@ public class RequestController {
     }
 
     @GetMapping
-    public List<KanbanColumn> getAllWardRequests() {
-        return requestService.getKanbanBoard();
+    public List<KanbanColumn> getAllWardRequests(@RequestParam Integer requestTypeId) {
+        return requestService.getKanbanBoard(requestTypeId);
     }
 
     @PostMapping("/change_status")

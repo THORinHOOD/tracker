@@ -41,8 +41,9 @@ public class RequestService {
         this.commentRepository = commentRepository;
     }
 
-    public List<KanbanColumn> getKanbanBoard() {
+    public List<KanbanColumn> getKanbanBoard(Integer requestTypeId) {
         return requestStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+                .filter(status -> status.getRequestTypeIds().contains(requestTypeId))
                 .map(status ->
                     KanbanColumn.builder()
                         .statusInfo(status)
