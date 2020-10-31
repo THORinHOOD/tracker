@@ -61,7 +61,7 @@ public class RequestController {
                 .makeResponse();
     }
 
-    @GetMapping("/by_type")
+    @GetMapping("/kanban")
     public ResponseEntity<Response<List<KanbanColumn>>> getAllWardRequests(@RequestParam Integer requestTypeId) {
         return requestService
                 .getKanbanBoard(requestTypeId)
