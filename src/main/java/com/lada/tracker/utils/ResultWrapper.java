@@ -6,6 +6,12 @@ public class ResultWrapper {
 
     public static final ResultWrapper SUCCESSFUL = new ResultWrapper().setSuccess(true);
 
+    public static  ResultWrapper BAD(String message) {
+        return new ResultWrapper()
+                .setSuccess(false)
+                .setMessage(message);
+    }
+
     @Getter
     private String message;
     @Getter

@@ -11,17 +11,17 @@ import java.sql.Timestamp;
 @Data
 @Builder
 @Entity
-@Table(name = "message", schema = "tracker")
+@Table(name = "comment", schema = "tracker")
 @NoArgsConstructor
 @AllArgsConstructor
-public class Message {
+public class Comment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     Timestamp creation;
     String message;
-    @Column(name = "employee_id")
-    Long employeeId;
+    @Column(name = "user_id")
+    Long userId;
 
 }

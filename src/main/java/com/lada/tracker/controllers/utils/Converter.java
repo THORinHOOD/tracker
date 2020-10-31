@@ -1,31 +1,31 @@
 package com.lada.tracker.controllers.utils;
 
-import com.lada.tracker.controllers.dto.MessageRequestWardCreate;
-import com.lada.tracker.controllers.dto.RequestFromWardDto;
-import com.lada.tracker.entities.Message;
+import com.lada.tracker.controllers.dto.CommentCreate;
+import com.lada.tracker.controllers.dto.RequestDto;
+import com.lada.tracker.entities.Comment;
+import com.lada.tracker.entities.Request;
+import org.json.JSONObject;
 
 import java.sql.Timestamp;
 
 public class Converter {
 
-    public static com.lada.tracker.entities.RequestFromWard newRequestFromWard(RequestFromWardDto createRequest) {
+    public static Request newRequestFromDto(RequestDto createRequest) {
         Timestamp currentTime = currentTimestamp();
-        return com.lada.tracker.entities.RequestFromWard.builder()
-                .name(createRequest.getName())
-                .email(createRequest.getEmail())
-                .phone(createRequest.getPhone())
+        return Request.builder()
                 .status(1) // TODO
+                .additionalInfo(createRequest.getAdditionalInfo())
                 .body(createRequest.getBody())
-                .trafic(createRequest.getTrafic())
                 .registrationDate(currentTime)
                 .lastTransaction(currentTime)
+                .requestTypeId(createRequest.getRequestType())
                 .build();
     }
 
-    public static Message newMessage(MessageRequestWardCreate createRequest) {
-        return Message.builder()
+    public static Comment newComment(CommentCreate createRequest) {
+        return Comment.builder()
                 .creation(currentTimestamp())
-                .employeeId(createRequest.getEmployeeId())
+                .userId(createRequest.getUserId())
                 .message(createRequest.getMessage())
                 .build();
     }

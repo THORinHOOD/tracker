@@ -3,8 +3,8 @@ package com.lada.tracker.controllers.dto;
 import lombok.Data;
 
 @Data
-public class MessageRequestWardCreate {
+public class CommentCreate {
     private String message;
-    private Long employeeId;
+    private Long userId;
     private Long requestId;
 }

@@ -1,21 +1,27 @@
 package com.lada.tracker.entities;
 
+import com.lada.tracker.converters.PgJsonbToMapConverter;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.Map;
 
 @Data
 @Builder
 @Entity
-@Table(name = "request_from_ward", schema = "tracker")
+@Table(name = "request", schema = "tracker")
 @NoArgsConstructor
 @AllArgsConstructor
-public class RequestFromWard {
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
+public class Request implements Serializable {
 
     @Id
     @Column
@@ -24,19 +30,19 @@ public class RequestFromWard {
 
     @Column(name = "registration_date")
     private Timestamp registrationDate;
-
-    private String name;
-    private String phone;
-    private String email;
     private String body;
 
     @Column(name = "last_transaction")
     private Timestamp lastTransaction;
-    private String trafic;
     private Integer status;
+    @Column(name = "request_type_id")
+    private Integer requestTypeId;
 
-    @Column(name = "message_ids")
     @Type(type = "com.lada.tracker.utils.LongArrayUserType")
-    private Long[] messageIds;
+    private Long[] comments;
+
+    @Column(name = "additional_info")
+    @Type(type = "jsonb")
+    private Map<String, Object> additionalInfo;
 
 }
