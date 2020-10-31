@@ -11,8 +11,8 @@ import com.lada.tracker.repositories.RequestRepository;
 import com.lada.tracker.repositories.RequestStatusRepository;
 import com.lada.tracker.repositories.RequestTransactionRepository;
 import com.lada.tracker.services.models.KanbanColumn;
+import com.lada.tracker.services.models.Response;
 import com.lada.tracker.utils.ResultWrapper;
-import org.json.JSONObject;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,21 +41,21 @@ public class RequestService {
         this.commentRepository = commentRepository;
     }
 
-    public List<KanbanColumn> getKanbanBoard(Integer requestTypeId) {
-        return requestStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+    public Response<List<KanbanColumn>> getKanbanBoard(Integer requestTypeId) {
+        return Response.OK(requestStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
                 .filter(status -> status.getRequestTypeIds().contains(requestTypeId))
                 .map(status ->
                     KanbanColumn.builder()
                         .statusInfo(status)
                         .requests(requestRepository.findAllByStatus(status.getId()))
                         .build())
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 
-    public ResultWrapper changeRequest(RequestDtoWithId newFields) {
+    public Response<Request> changeRequest(RequestDtoWithId newFields) {
         Optional<Request> requestWrapper = requestRepository.findById(newFields.getId());
         if (requestWrapper.isEmpty()) {
-            return ResultWrapper.BAD(String.format("Request with id = %d not found", newFields.getId()));
+            return Response.BAD("Request with id = %d not found", newFields.getId());
         }
         Request request = requestWrapper.get();
         updateValue(newFields.getBody(), request.getBody(), request::setBody);
@@ -73,8 +73,7 @@ public class RequestService {
             }
         }
 
-        requestRepository.save(request);
-        return ResultWrapper.SUCCESSFUL;
+        return Response.OK(requestRepository.save(request));
     }
 
     private <T> void updateValue(T newValue, T oldValue, Consumer<T> setter) {
@@ -90,12 +89,11 @@ public class RequestService {
     }
 
     @Transactional
-    public Comment addCommentToRequest(CommentCreate commentCreate) {
+    public Response<Comment> addCommentToRequest(CommentCreate commentCreate) {
         Comment comment =  commentRepository.save(Converter.newComment(commentCreate));
         Optional<Request> requestWrapper = requestRepository.findById(commentCreate.getRequestId());
         if (requestWrapper.isEmpty()) {
-            throw new IllegalArgumentException(String.format("Request with id = %d not found",
-                    commentCreate.getRequestId()));
+            return Response.BAD(String.format("Запрос с id = %d не найден", commentCreate.getRequestId()));
         }
         Request request = requestWrapper.get();
         Long[] ids = new Long[request.getComments().length + 1];
@@ -103,24 +101,20 @@ public class RequestService {
         ids[ids.length - 1] = comment.getId();
         request.setComments(ids);
         requestRepository.save(request);
-        return comment;
+        return Response.OK(comment);
     }
 
-    public ResultWrapper changeRequestWardStatus(long requestId, int newStatusId) {
+    public Response<Request> changeRequestStatus(long requestId, int newStatusId) {
         Optional<Request> requestWrapper = requestRepository.findById(requestId);
         if (requestWrapper.isEmpty()) {
-            return new ResultWrapper()
-                .setSuccess(false)
-                .setMessage(String.format("Request with id = %d not found", requestId));
+            return Response.BAD("Запрос с id = %d не найден", requestId);
         }
 
         Optional<RequestTransaction> transactionWrapper = requestTransactionRepository
                 .findByFromAndTo(requestWrapper.get().getStatus(), newStatusId);
         if (transactionWrapper.isEmpty()) {
-            return new ResultWrapper()
-                .setSuccess(false)
-                .setMessage(String.format("Can't find status transaction from %d to %d",
-                        requestWrapper.get().getStatus(), newStatusId));
+            return Response.BAD("Не найден возможный переход между статусами %d и %d для этого запроса",
+                    requestWrapper.get().getStatus(), newStatusId);
         }
 
         // TODO : role check
@@ -128,12 +122,11 @@ public class RequestService {
         if (transactionWrapper.get().getRequestTypeIds().contains(requestWrapper.get().getRequestTypeId())) {
             Request request = requestWrapper.get();
             request.setStatus(newStatusId);
-            requestRepository.save(request);
-            return ResultWrapper.SUCCESSFUL;
+            return Response.OK(requestRepository.save(request));
         }
 
-        return ResultWrapper.BAD(String.format("Can't change status from %d to %d for request of type %d",
-                requestWrapper.get().getStatus(), newStatusId, requestWrapper.get().getRequestTypeId()));
+        return Response.BAD("Невохможно перевести запрос типа %d из статуса %d в статус %d  %d",
+                requestWrapper.get().getRequestTypeId(), requestWrapper.get().getStatus(), newStatusId);
     }
 
 }

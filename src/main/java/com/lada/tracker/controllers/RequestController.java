@@ -1,26 +1,22 @@
 package com.lada.tracker.controllers;
 
-import com.lada.tracker.controllers.dto.CommentCreate;
-import com.lada.tracker.controllers.dto.RequestChangeStatus;
-import com.lada.tracker.controllers.dto.RequestDto;
-import com.lada.tracker.controllers.dto.RequestDtoWithId;
+import com.lada.tracker.controllers.dto.*;
 import com.lada.tracker.controllers.utils.Converter;
 import com.lada.tracker.entities.Comment;
 import com.lada.tracker.entities.Request;
-import com.lada.tracker.entities.RequestStatus;
 import com.lada.tracker.entities.RequestType;
 import com.lada.tracker.repositories.CommentRepository;
 import com.lada.tracker.repositories.RequestRepository;
 import com.lada.tracker.repositories.RequestStatusRepository;
 import com.lada.tracker.repositories.RequestTypeRepository;
 import com.lada.tracker.services.RequestService;
+import com.lada.tracker.services.models.Response;
 import com.lada.tracker.services.models.KanbanColumn;
-import com.lada.tracker.utils.ResultWrapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("requests")
@@ -45,59 +41,76 @@ public class RequestController {
     }
 
     @GetMapping("/by_status")
-    public List<Request> getRequestsFromWards(@RequestParam int status) {
-        return requestRepository.findAllByStatus(status);
+    public ResponseEntity<Response<List<Request>>> getRequests(@RequestParam int status) {
+        return Response
+                .EXECUTE(() -> requestRepository.findAllByStatus(status))
+                .makeResponse();
     }
 
     @GetMapping
-    public List<KanbanColumn> getAllWardRequests(@RequestParam Integer requestTypeId) {
-        return requestService.getKanbanBoard(requestTypeId);
+    public ResponseEntity<Response<Request>> getRequest(@RequestParam Long id) {
+        return Response
+                .EXECUTE_RAW(() -> {
+                    Optional<Request> request = requestRepository.findById(id);
+                    if (request.isPresent()) {
+                        return Response.OK(request.get());
+                    } else {
+                        return Response.BAD("Не найден запрос с id = %d", id);
+                    }
+                })
+                .makeResponse();
+    }
+
+    @GetMapping("/by_type")
+    public ResponseEntity<Response<List<KanbanColumn>>> getAllWardRequests(@RequestParam Integer requestTypeId) {
+        return requestService
+                .getKanbanBoard(requestTypeId)
+                .makeResponse();
     }
 
     @PostMapping("/change_status")
-    public ResponseEntity<String> changeRequestStatus(@RequestBody RequestChangeStatus requestChangeStatus) {
-        ResultWrapper resultWrapper = requestService.changeRequestWardStatus(
-                requestChangeStatus.getRequestId(), requestChangeStatus.getStatus());
-        if (resultWrapper.isSuccess()) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.badRequest().body(resultWrapper.getMessage());
-        }
+    public ResponseEntity<Response<Request>> changeRequestStatus(@RequestBody RequestChangeStatus requestChangeStatus) {
+        return requestService
+                .changeRequestStatus(requestChangeStatus.getRequestId(), requestChangeStatus.getStatus())
+                .makeResponse();
     }
 
     @PostMapping("/change")
-    public ResponseEntity<String> changeRequest(@RequestBody RequestDtoWithId requestChange) {
-        ResultWrapper resultWrapper = requestService.changeRequest(requestChange);
-        if (resultWrapper.isSuccess()) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.badRequest().body(resultWrapper.getMessage());
-        }
+    public ResponseEntity<Response<Request>> changeRequest(@RequestBody RequestDtoWithId requestChange) {
+        return requestService
+                .changeRequest(requestChange)
+                .makeResponse();
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Request> createRequest(@RequestBody RequestDto requestCreate) {
-        Request requestFromWard = Converter.newRequestFromDto(requestCreate);
-        return ResponseEntity.ok().body(requestRepository.save(requestFromWard));
+    public ResponseEntity<Response<Request>> createRequest(@RequestBody RequestDto requestCreate) {
+        return Response
+                .EXECUTE(() -> {
+                    Request request = Converter.newRequestFromDto(requestCreate);
+                    return requestRepository.save(request);
+                })
+                .makeResponse();
     }
 
-    @GetMapping("/messages")
-    public List<Comment> getRequestComments(@RequestParam List<Long> messagesIds) {
-        return commentRepository.findAllById(messagesIds);
+    @GetMapping("/comments")
+    public ResponseEntity<Response<List<Comment>>> getRequestComments(@RequestParam List<Long> commentsIds) {
+        return Response
+                .EXECUTE(() -> commentRepository.findAllById(commentsIds))
+                .makeResponse();
     }
 
-    @PostMapping("/messages")
-    public ResponseEntity<Comment> createRequestComment(@RequestBody CommentCreate commentCreate) {
-        try {
-            return ResponseEntity.ok(requestService.addCommentToRequest(commentCreate));
-        } catch (Exception exception) {
-            return ResponseEntity.badRequest().build();
-        }
+    @PostMapping("/comments")
+    public ResponseEntity<Response<Comment>> createRequestComment(@RequestBody CommentCreate commentCreate) {
+        return requestService
+                .addCommentToRequest(commentCreate)
+                .makeResponse();
     }
 
     @GetMapping("/types")
-    public List<RequestType> getAllRequestTypes() {
-        return requestTypeRepository.findAll();
+    public ResponseEntity<Response<List<RequestType>>> getAllRequestTypes() {
+        return Response
+                .EXECUTE(requestTypeRepository::findAll)
+                .makeResponse();
     }
 
 }
