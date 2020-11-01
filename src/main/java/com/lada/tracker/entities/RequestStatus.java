@@ -30,5 +30,5 @@ public class RequestStatus {
     @Type(type = "list-array")
     @Column(name = "request_type_ids", columnDefinition = "int[]")
     private List<Integer> requestTypeIds;
-
+    private Boolean start;
 }

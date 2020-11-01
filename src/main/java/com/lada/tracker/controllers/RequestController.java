@@ -1,7 +1,7 @@
 package com.lada.tracker.controllers;
 
 import com.lada.tracker.controllers.dto.*;
-import com.lada.tracker.controllers.utils.Converter;
+import com.lada.tracker.services.ModelsFactoryService;
 import com.lada.tracker.entities.Comment;
 import com.lada.tracker.entities.Request;
 import com.lada.tracker.entities.RequestType;
@@ -26,18 +26,19 @@ public class RequestController {
     private final RequestService requestService;
     private final CommentRepository commentRepository;
     private final RequestTypeRepository requestTypeRepository;
-    private final RequestStatusRepository requestStatusRepository;
+    private final ModelsFactoryService modelsFactoryService;
 
     public RequestController(RequestRepository requestRepository,
                              RequestService requestService,
                              CommentRepository commentRepository,
                              RequestTypeRepository requestTypeRepository,
-                             RequestStatusRepository requestStatusRepository) {
+                             RequestStatusRepository requestStatusRepository,
+                             ModelsFactoryService modelsFactoryService) {
         this.requestRepository = requestRepository;
         this.requestService = requestService;
         this.commentRepository = commentRepository;
         this.requestTypeRepository = requestTypeRepository;
-        this.requestStatusRepository = requestStatusRepository;
+        this.modelsFactoryService = modelsFactoryService;
     }
 
     @GetMapping("/by_status")
@@ -85,9 +86,12 @@ public class RequestController {
     @PostMapping("/create")
     public ResponseEntity<Response<Request>> createRequest(@RequestBody RequestDto requestCreate) {
         return Response
-                .EXECUTE(() -> {
-                    Request request = Converter.newRequestFromDto(requestCreate);
-                    return requestRepository.save(request);
+                .EXECUTE_RAW(() -> {
+                    Response<Request> request = modelsFactoryService.buildRequest(requestCreate);
+                    if (!request.isSuccess()) {
+                        return request;
+                    }
+                    return Response.EXECUTE(() -> requestRepository.save(request.getBody()));
                 })
                 .makeResponse();
     }

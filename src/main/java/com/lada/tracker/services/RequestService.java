@@ -2,7 +2,6 @@ package com.lada.tracker.services;
 
 import com.lada.tracker.controllers.dto.CommentCreate;
 import com.lada.tracker.controllers.dto.RequestDtoWithId;
-import com.lada.tracker.controllers.utils.Converter;
 import com.lada.tracker.entities.Comment;
 import com.lada.tracker.entities.Request;
 import com.lada.tracker.entities.RequestTransaction;
@@ -12,7 +11,6 @@ import com.lada.tracker.repositories.RequestStatusRepository;
 import com.lada.tracker.repositories.RequestTransactionRepository;
 import com.lada.tracker.services.models.KanbanColumn;
 import com.lada.tracker.services.models.Response;
-import com.lada.tracker.utils.ResultWrapper;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,19 +28,23 @@ public class RequestService {
     private final RequestTransactionRepository requestTransactionRepository;
     private final RequestStatusRepository requestStatusRepository;
     private final CommentRepository commentRepository;
+    private final ModelsFactoryService modelsFactoryService;
 
     public RequestService(RequestRepository requestRepository,
                           RequestTransactionRepository requestTransactionRepository,
                           RequestStatusRepository requestStatusRepository,
-                          CommentRepository commentRepository) {
+                          CommentRepository commentRepository,
+                          ModelsFactoryService modelsFactoryService) {
         this.requestRepository = requestRepository;
         this.requestTransactionRepository = requestTransactionRepository;
         this.requestStatusRepository = requestStatusRepository;
         this.commentRepository = commentRepository;
+        this.modelsFactoryService = modelsFactoryService;
     }
 
     public Response<List<KanbanColumn>> getKanbanBoard(Integer requestTypeId) {
-        return Response.OK(requestStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+        return Response.OK(
+                requestStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
                 .filter(status -> status.getRequestTypeIds().contains(requestTypeId))
                 .map(status ->
                     KanbanColumn.builder()
@@ -90,7 +92,7 @@ public class RequestService {
 
     @Transactional
     public Response<Comment> addCommentToRequest(CommentCreate commentCreate) {
-        Comment comment =  commentRepository.save(Converter.newComment(commentCreate));
+        Comment comment =  commentRepository.save(modelsFactoryService.buildComment(commentCreate));
         Optional<Request> requestWrapper = requestRepository.findById(commentCreate.getRequestId());
         if (requestWrapper.isEmpty()) {
             return Response.BAD(String.format("Запрос с id = %d не найден", commentCreate.getRequestId()));
