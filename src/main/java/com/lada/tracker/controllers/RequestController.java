@@ -64,22 +64,23 @@ public class RequestController {
 
     @GetMapping("/kanban")
     public ResponseEntity<Response<List<KanbanColumn>>> getAllWardRequests(@RequestParam Integer requestTypeId) {
-        return requestService
-                .getKanbanBoard(requestTypeId)
+        return Response
+                .EXECUTE_RAW(() -> requestService.getKanbanBoard(requestTypeId))
                 .makeResponse();
     }
 
     @PostMapping("/change_status")
     public ResponseEntity<Response<Request>> changeRequestStatus(@RequestBody RequestChangeStatus requestChangeStatus) {
-        return requestService
-                .changeRequestStatus(requestChangeStatus.getRequestId(), requestChangeStatus.getStatus())
+        return Response
+                .EXECUTE_RAW(() -> requestService.changeRequestStatus(requestChangeStatus.getRequestId(),
+                        requestChangeStatus.getStatus()))
                 .makeResponse();
     }
 
     @PostMapping("/change")
     public ResponseEntity<Response<Request>> changeRequest(@RequestBody RequestDtoWithId requestChange) {
-        return requestService
-                .changeRequest(requestChange)
+        return Response
+                .EXECUTE_RAW(() -> requestService.changeRequest(requestChange))
                 .makeResponse();
     }
 
@@ -105,8 +106,8 @@ public class RequestController {
 
     @PostMapping("/comments")
     public ResponseEntity<Response<Comment>> createRequestComment(@RequestBody CommentCreate commentCreate) {
-        return requestService
-                .addCommentToRequest(commentCreate)
+        return Response
+                .EXECUTE_RAW(() -> requestService.addCommentToRequest(commentCreate))
                 .makeResponse();
     }
 
