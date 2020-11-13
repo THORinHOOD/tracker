@@ -4,22 +4,26 @@ import com.lada.tracker.controllers.dto.CommentCreate;
 import com.lada.tracker.controllers.dto.RequestDtoWithId;
 import com.lada.tracker.entities.Comment;
 import com.lada.tracker.entities.Request;
+import com.lada.tracker.entities.RequestStatus;
 import com.lada.tracker.entities.RequestTransaction;
 import com.lada.tracker.repositories.CommentRepository;
 import com.lada.tracker.repositories.RequestRepository;
 import com.lada.tracker.repositories.RequestStatusRepository;
 import com.lada.tracker.repositories.RequestTransactionRepository;
+import com.lada.tracker.repositories.specifications.RequestSpecification;
 import com.lada.tracker.services.models.KanbanColumn;
 import com.lada.tracker.services.models.Response;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class RequestService {
@@ -44,8 +48,7 @@ public class RequestService {
 
     public Response<List<KanbanColumn>> getKanbanBoard(Integer requestTypeId) {
         return Response.OK(
-                requestStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
-                .filter(status -> status.getRequestTypeIds().contains(requestTypeId))
+                getRequestStatuses(requestTypeId)
                 .map(status ->
                     KanbanColumn.builder()
                         .statusInfo(status)
@@ -54,10 +57,38 @@ public class RequestService {
                 .collect(Collectors.toList()));
     }
 
+    private Stream<RequestStatus> getRequestStatuses(Integer requestTypeId) {
+        return requestStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+                .filter(status -> status.getRequestTypeIds().contains(requestTypeId));
+    }
+
+    public Response<List<KanbanColumn>> getKanbanBoardFiltered(Integer requestTypeId, String bodyFilter,
+                                                               Timestamp after, Timestamp before) {
+        if (requestTypeId == null) {
+            return Response.BAD("Не передан тип запросов");
+        }
+        RequestSpecification requestSpecification = RequestSpecification.start()
+                .eqRequestTypeId(requestTypeId)
+                .bodyContains(bodyFilter)
+                .registerAfter(after)
+                .registerBefore(before);
+
+        Map<Integer, List<Request>> requestsByStatus = requestRepository.findAll(requestSpecification.end())
+                .stream()
+                .collect(Collectors.groupingBy(Request::getStatus));
+
+        return Response.EXECUTE(() -> getRequestStatuses(requestTypeId)
+                .map(status -> KanbanColumn.builder()
+                    .statusInfo(status)
+                    .requests(requestsByStatus.get(status.getId()))
+                    .build())
+                .collect(Collectors.toList()));
+    }
+
     public Response<Request> changeRequest(RequestDtoWithId newFields) {
         Optional<Request> requestWrapper = requestRepository.findById(newFields.getId());
         if (requestWrapper.isEmpty()) {
-            return Response.BAD("Request with id = %d not found", newFields.getId());
+            return Response.BAD("Запрос с id = %d не найден", newFields.getId());
         }
         Request request = requestWrapper.get();
         updateValue(newFields.getBody(), request.getBody(), request::setBody);
@@ -127,7 +158,7 @@ public class RequestService {
             return Response.OK(requestRepository.save(request));
         }
 
-        return Response.BAD("Невохможно перевести запрос типа %d из статуса %d в статус %d  %d",
+        return Response.BAD("Невозможно перевести запрос типа %d из статуса %d в статус %d  %d",
                 requestWrapper.get().getRequestTypeId(), requestWrapper.get().getStatus(), newStatusId);
     }
 

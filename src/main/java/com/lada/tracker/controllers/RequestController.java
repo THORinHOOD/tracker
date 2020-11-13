@@ -12,15 +12,20 @@ import com.lada.tracker.repositories.RequestTypeRepository;
 import com.lada.tracker.services.RequestService;
 import com.lada.tracker.services.models.Response;
 import com.lada.tracker.services.models.KanbanColumn;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("requests")
 public class RequestController {
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
 
     private final RequestRepository requestRepository;
     private final RequestService requestService;
@@ -66,6 +71,18 @@ public class RequestController {
     public ResponseEntity<Response<List<KanbanColumn>>> getAllWardRequests(@RequestParam Integer requestTypeId) {
         return Response
                 .EXECUTE_RAW(() -> requestService.getKanbanBoard(requestTypeId))
+                .makeResponse();
+    }
+
+    @GetMapping("/v2/kanban")
+    public ResponseEntity<Response<List<KanbanColumn>>> getAllWardRequestsFiltered(
+            @RequestParam Integer requestTypeId,
+            @RequestParam(required = false) String body,
+            @RequestParam(required = false, name = "registerAfter") String after,
+            @RequestParam(required = false, name = "registerBefore") String before) {
+        return Response
+                .EXECUTE_RAW(() -> requestService.getKanbanBoardFiltered(requestTypeId, body, parseDate(after),
+                        parseDate(before)))
                 .makeResponse();
     }
 
@@ -118,4 +135,15 @@ public class RequestController {
                 .makeResponse();
     }
 
+    private Timestamp parseDate(String date) {
+        if (date == null) {
+            return null;
+        }
+        try {
+            Date parsedDate = dateFormat.parse(date);
+            return new java.sql.Timestamp(parsedDate.getTime());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Дата в неверном формате : " + date);
+        }
+    }
 }
