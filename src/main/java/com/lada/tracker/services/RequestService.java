@@ -46,17 +46,6 @@ public class RequestService {
         this.modelsFactoryService = modelsFactoryService;
     }
 
-    public Response<List<KanbanColumn>> getKanbanBoard(Integer requestTypeId) {
-        return Response.OK(
-                getRequestStatuses(requestTypeId)
-                .map(status ->
-                    KanbanColumn.builder()
-                        .statusInfo(status)
-                        .requests(requestRepository.findAllByStatus(status.getId()))
-                        .build())
-                .collect(Collectors.toList()));
-    }
-
     private Stream<RequestStatus> getRequestStatuses(Integer requestTypeId) {
         return requestStatusRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
                 .filter(status -> status.getRequestTypeIds().contains(requestTypeId));
