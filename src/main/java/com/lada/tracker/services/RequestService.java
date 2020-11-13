@@ -143,7 +143,7 @@ public class RequestService {
             return Response.BAD("Запрос с id = %d не найден", requestId);
         }
 
-        Optional<RequestTransaction> transactionWrapper = requestTransactionRepository
+        List<RequestTransaction> transactionWrapper = requestTransactionRepository
                 .findByFromAndTo(requestWrapper.get().getStatus(), newStatusId);
         if (transactionWrapper.isEmpty()) {
             return Response.BAD("Не найден возможный переход между статусами %d и %d для этого запроса",
@@ -152,7 +152,7 @@ public class RequestService {
 
         // TODO : role check
 
-        if (transactionWrapper.get().getRequestTypeIds().contains(requestWrapper.get().getRequestTypeId())) {
+        if (transactionWrapper.get(0).getRequestTypeIds().contains(requestWrapper.get().getRequestTypeId())) {
             Request request = requestWrapper.get();
             request.setStatus(newStatusId);
             return Response.OK(requestRepository.save(request));
