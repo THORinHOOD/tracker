@@ -129,7 +129,7 @@ public class RequestController {
                 .makeResponse();
     }
 
-    @PostMapping(value = "/addTransactions")
+    @PostMapping(value = "/addMoneyTransactions")
     public ResponseEntity<Response<Boolean>> addTransactions(@RequestBody Map<String, Object[]> toUpdate,
                                                              @RequestParam Long requestId) {
         return Response
