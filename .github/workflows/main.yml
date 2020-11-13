@@ -1,0 +1,65 @@
+name: Tracker CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 1.11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.11
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Build with Gradle
+      run: ./gradlew build
+    - name: Save jar artifact
+      uses: actions/upload-artifact@master
+      with:
+        name: tracker
+        path: build/libs/tracker-0.0.1.jar
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to the remote server
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: tracker
+          path: build/libs/tracker-0.0.1.jar
+      - name: Deploy the package to the remote server
+        uses: garygrossgarten/github-action-scp@release
+        with:
+          local: build/libs/tracker-0.0.1.jar
+          remote: tracker/tracker-0.0.1.jar
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+      - name: Stop previous instance
+        if: always()
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            cd tracker/tracker-0.0.1.jar && kill -9 $(cat application.pid)
+          host: ${{ secrets.HOST }}
+          user: ${{ secrets.SSH_USER }}
+          pass: ${{ secrets.SSH_PASSWORD }}
+          args: "-tt"
+      - name: Run the application on remote server
+        if: always()
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            cd tracker/tracker-0.0.1.jar && java -jar tracker-0.0.1.jar &
+          host: ${{ secrets.HOST }}
+          user: ${{ secrets.SSH_USER }}
+          pass: ${{ secrets.SSH_PASSWORD }}
+          args: "-tt"
