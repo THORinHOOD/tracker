@@ -68,13 +68,6 @@ public class RequestController {
     }
 
     @GetMapping("/kanban")
-    public ResponseEntity<Response<List<KanbanColumn>>> getAllWardRequests(@RequestParam Integer requestTypeId) {
-        return Response
-                .EXECUTE_RAW(() -> requestService.getKanbanBoard(requestTypeId))
-                .makeResponse();
-    }
-
-    @GetMapping("/v2/kanban")
     public ResponseEntity<Response<List<KanbanColumn>>> getAllWardRequestsFiltered(
             @RequestParam Integer requestTypeId,
             @RequestParam(required = false) String body,
