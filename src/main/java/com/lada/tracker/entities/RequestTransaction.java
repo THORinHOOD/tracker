@@ -26,7 +26,9 @@ public class RequestTransaction {
     private int id;
     private int from;
     private int to;
-    private int role;
+    @Type(type = "list-array")
+    @Column(name = "roles", columnDefinition = "int[]")
+    private List<Integer> roles;
     @Type(type = "list-array")
     @Column(name = "request_type_ids", columnDefinition = "int[]")
     private List<Integer> requestTypeIds;

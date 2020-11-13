@@ -7,12 +7,10 @@ import com.lada.tracker.entities.Request;
 import com.lada.tracker.entities.RequestType;
 import com.lada.tracker.repositories.CommentRepository;
 import com.lada.tracker.repositories.RequestRepository;
-import com.lada.tracker.repositories.RequestStatusRepository;
 import com.lada.tracker.repositories.RequestTypeRepository;
 import com.lada.tracker.services.RequestService;
 import com.lada.tracker.services.models.Response;
 import com.lada.tracker.services.models.KanbanColumn;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +36,6 @@ public class RequestController {
                              RequestService requestService,
                              CommentRepository commentRepository,
                              RequestTypeRepository requestTypeRepository,
-                             RequestStatusRepository requestStatusRepository,
                              ModelsFactoryService modelsFactoryService) {
         this.requestRepository = requestRepository;
         this.requestService = requestService;
