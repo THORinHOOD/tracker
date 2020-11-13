@@ -20,6 +20,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -125,6 +126,14 @@ public class RequestController {
     public ResponseEntity<Response<List<RequestType>>> getAllRequestTypes() {
         return Response
                 .EXECUTE(requestTypeRepository::findAll)
+                .makeResponse();
+    }
+
+    @PostMapping(value = "/addTransactions")
+    public ResponseEntity<Response<Boolean>> addTransactions(@RequestBody Map<String, Object[]> toUpdate,
+                                                             @RequestParam Long requestId) {
+        return Response
+                .EXECUTE_RAW(() -> requestService.addValuesToArray(requestId, toUpdate))
                 .makeResponse();
     }
 

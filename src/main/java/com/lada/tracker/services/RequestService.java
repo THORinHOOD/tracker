@@ -18,9 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -96,6 +94,25 @@ public class RequestService {
         }
 
         return Response.OK(requestRepository.save(request));
+    }
+
+    public Response<Boolean> addValuesToArray(Long requestId, Map<String, Object[]> valuesToAdd) {
+        Optional<Request> requestOptional = requestRepository.findById(requestId);
+        if (requestOptional.isEmpty()) {
+            return Response.BAD("Не найден запрос (id : %d)", requestId);
+        }
+        Request request = requestOptional.get();
+        valuesToAdd.forEach((key, values) -> {
+            if (request.getAdditionalInfo().containsKey(key)) {
+                ((ArrayList) request.getAdditionalInfo().get(key)).addAll(Arrays.asList(values));
+            } else {
+                request.getAdditionalInfo().put(key, values);
+            }
+        });
+        return Response.EXECUTE(() -> {
+            requestRepository.save(request);
+            return true;
+        });
     }
 
     private <T> void updateValue(T newValue, T oldValue, Consumer<T> setter) {
