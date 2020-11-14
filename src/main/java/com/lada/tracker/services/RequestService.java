@@ -65,10 +65,16 @@ public class RequestService {
                 .collect(Collectors.groupingBy(Request::getStatus));
 
         return Response.EXECUTE(() -> getRequestStatuses(requestTypeId)
-                .map(status -> KanbanColumn.builder()
-                    .statusInfo(status)
-                    .requests(requestsByStatus.get(status.getId()))
-                    .build())
+                .map(status -> {
+                    KanbanColumn kanbanColumn = KanbanColumn.builder()
+                            .statusInfo(status)
+                            .requests(requestsByStatus.get(status.getId()))
+                            .build();
+                    if (kanbanColumn.getRequests() == null) {
+                        kanbanColumn.setRequests(Collections.emptyList());
+                    }
+                    return kanbanColumn;
+                })
                 .collect(Collectors.toList()));
     }
 
