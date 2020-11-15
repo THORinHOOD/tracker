@@ -1,6 +1,7 @@
 package com.lada.tracker.controllers;
 
 import com.lada.tracker.controllers.dto.*;
+import com.lada.tracker.security.CustomUserDetails;
 import com.lada.tracker.services.ModelsFactoryService;
 import com.lada.tracker.entities.Comment;
 import com.lada.tracker.entities.Request;
@@ -12,6 +13,7 @@ import com.lada.tracker.services.RequestService;
 import com.lada.tracker.services.models.Response;
 import com.lada.tracker.services.models.KanbanColumn;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
@@ -45,14 +47,16 @@ public class RequestController {
     }
 
     @GetMapping("/by_status")
-    public ResponseEntity<Response<List<Request>>> getRequests(@RequestParam int status) {
+    public ResponseEntity<Response<List<Request>>> getRequests(@RequestParam int status,
+                                                               @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE(() -> requestRepository.findAllByStatus(status))
                 .makeResponse();
     }
 
     @GetMapping
-    public ResponseEntity<Response<Request>> getRequest(@RequestParam Long id) {
+    public ResponseEntity<Response<Request>> getRequest(@RequestParam Long id,
+                                                        @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE_RAW(() -> {
                     Optional<Request> request = requestRepository.findById(id);
@@ -70,7 +74,8 @@ public class RequestController {
             @RequestParam Integer requestTypeId,
             @RequestParam(required = false) String body,
             @RequestParam(required = false, name = "registerAfter") String after,
-            @RequestParam(required = false, name = "registerBefore") String before) {
+            @RequestParam(required = false, name = "registerBefore") String before,
+            @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE_RAW(() -> requestService.getKanbanBoardFiltered(requestTypeId, body, parseDate(after),
                         parseDate(before)))
@@ -78,7 +83,8 @@ public class RequestController {
     }
 
     @PostMapping("/change_status")
-    public ResponseEntity<Response<Request>> changeRequestStatus(@RequestBody RequestChangeStatus requestChangeStatus) {
+    public ResponseEntity<Response<Request>> changeRequestStatus(@RequestBody RequestChangeStatus requestChangeStatus,
+                                                                 @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE_RAW(() -> requestService.changeRequestStatus(requestChangeStatus.getRequestId(),
                         requestChangeStatus.getStatus()))
@@ -86,14 +92,16 @@ public class RequestController {
     }
 
     @PostMapping("/change")
-    public ResponseEntity<Response<Request>> changeRequest(@RequestBody RequestDtoWithId requestChange) {
+    public ResponseEntity<Response<Request>> changeRequest(@RequestBody RequestDtoWithId requestChange,
+                                                           @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE_RAW(() -> requestService.changeRequest(requestChange))
                 .makeResponse();
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Response<Request>> createRequest(@RequestBody RequestDto requestCreate) {
+    public ResponseEntity<Response<Request>> createRequest(@RequestBody RequestDto requestCreate,
+                                                           @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE_RAW(() -> {
                     Response<Request> request = modelsFactoryService.buildRequest(requestCreate);
@@ -106,14 +114,18 @@ public class RequestController {
     }
 
     @GetMapping("/comments")
-    public ResponseEntity<Response<List<Comment>>> getRequestComments(@RequestParam List<Long> commentsIds) {
+    public ResponseEntity<Response<List<Comment>>> getRequestComments(
+            @RequestParam List<Long> commentsIds,
+            @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE(() -> commentRepository.findAllById(commentsIds))
                 .makeResponse();
     }
 
     @PostMapping("/comments")
-    public ResponseEntity<Response<Comment>> createRequestComment(@RequestBody CommentCreate commentCreate) {
+    public ResponseEntity<Response<Comment>> createRequestComment(
+            @RequestBody CommentCreate commentCreate,
+          @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE_RAW(() -> requestService.addCommentToRequest(commentCreate))
                 .makeResponse();
@@ -127,8 +139,10 @@ public class RequestController {
     }
 
     @PostMapping(value = "/addMoneyTransactions")
-    public ResponseEntity<Response<Boolean>> addTransactions(@RequestBody Map<String, Object[]> toUpdate,
-                                                             @RequestParam Long requestId) {
+    public ResponseEntity<Response<Boolean>> addTransactions(
+            @RequestBody Map<String, Object[]> toUpdate,
+            @RequestParam Long requestId,
+            @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE_RAW(() -> requestService.addValuesToArray(requestId, toUpdate))
                 .makeResponse();
