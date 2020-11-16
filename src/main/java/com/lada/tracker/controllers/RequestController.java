@@ -1,11 +1,10 @@
 package com.lada.tracker.controllers;
 
 import com.lada.tracker.controllers.dto.*;
+import com.lada.tracker.entities.*;
+import com.lada.tracker.repositories.RequestRoleRepository;
 import com.lada.tracker.security.CustomUserDetails;
 import com.lada.tracker.services.ModelsFactoryService;
-import com.lada.tracker.entities.Comment;
-import com.lada.tracker.entities.Request;
-import com.lada.tracker.entities.RequestType;
 import com.lada.tracker.repositories.CommentRepository;
 import com.lada.tracker.repositories.RequestRepository;
 import com.lada.tracker.repositories.RequestTypeRepository;
@@ -34,11 +33,12 @@ public class RequestController {
     private final RequestTypeRepository requestTypeRepository;
     private final ModelsFactoryService modelsFactoryService;
 
+
     public RequestController(RequestRepository requestRepository,
                              RequestService requestService,
                              CommentRepository commentRepository,
                              RequestTypeRepository requestTypeRepository,
-                             ModelsFactoryService modelsFactoryService) {
+                             ModelsFactoryService modelsFactoryService, RequestRoleRepository requestRoleRepository) {
         this.requestRepository = requestRepository;
         this.requestService = requestService;
         this.commentRepository = commentRepository;
@@ -125,7 +125,7 @@ public class RequestController {
     @PostMapping("/comments")
     public ResponseEntity<Response<Comment>> createRequestComment(
             @RequestBody CommentCreate commentCreate,
-          @AuthenticationPrincipal Optional<CustomUserDetails> user) {
+            @AuthenticationPrincipal Optional<CustomUserDetails> user) {
         return Response
                 .EXECUTE_RAW(() -> requestService.addCommentToRequest(commentCreate))
                 .makeResponse();
@@ -147,6 +147,19 @@ public class RequestController {
                 .EXECUTE_RAW(() -> requestService.addValuesToArray(requestId, toUpdate))
                 .makeResponse();
     }
+
+    @PostMapping(value = "/addRequestTransaction")
+    public ResponseEntity<Response<RequestTransaction>> addRequestTransaction(
+            @RequestBody RequestTransaction transaction) {
+
+        return requestService.addRequestTransaction(transaction).makeResponse();
+    }
+
+    @GetMapping(value = "/getStatuses")
+    public ResponseEntity<Response<List<RequestStatus>>> getStatuses() {
+        return requestService.getStatuses().makeResponse();
+    }
+
 
     private Timestamp parseDate(String date) {
         if (date == null) {

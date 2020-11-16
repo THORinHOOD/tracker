@@ -2,24 +2,20 @@ package com.lada.tracker.services;
 
 import com.lada.tracker.controllers.dto.CommentCreate;
 import com.lada.tracker.controllers.dto.RequestDtoWithId;
-import com.lada.tracker.entities.Comment;
-import com.lada.tracker.entities.Request;
-import com.lada.tracker.entities.RequestStatus;
-import com.lada.tracker.entities.RequestTransaction;
-import com.lada.tracker.repositories.CommentRepository;
-import com.lada.tracker.repositories.RequestRepository;
-import com.lada.tracker.repositories.RequestStatusRepository;
-import com.lada.tracker.repositories.RequestTransactionRepository;
+import com.lada.tracker.entities.*;
+import com.lada.tracker.repositories.*;
 import com.lada.tracker.repositories.specifications.RequestSpecification;
 import com.lada.tracker.services.models.KanbanColumn;
 import com.lada.tracker.services.models.Response;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,17 +27,19 @@ public class RequestService {
     private final RequestStatusRepository requestStatusRepository;
     private final CommentRepository commentRepository;
     private final ModelsFactoryService modelsFactoryService;
+    private final RequestRoleRepository requestRoleRepository;
 
     public RequestService(RequestRepository requestRepository,
                           RequestTransactionRepository requestTransactionRepository,
                           RequestStatusRepository requestStatusRepository,
                           CommentRepository commentRepository,
-                          ModelsFactoryService modelsFactoryService) {
+                          ModelsFactoryService modelsFactoryService, RequestRoleRepository requestRoleRepository) {
         this.requestRepository = requestRepository;
         this.requestTransactionRepository = requestTransactionRepository;
         this.requestStatusRepository = requestStatusRepository;
         this.commentRepository = commentRepository;
         this.modelsFactoryService = modelsFactoryService;
+        this.requestRoleRepository = requestRoleRepository;
     }
 
     private Stream<RequestStatus> getRequestStatuses(Integer requestTypeId) {
@@ -92,7 +90,7 @@ public class RequestService {
                 Map<String, Object> oldAdditionalInfo = request.getAdditionalInfo();
                 newFields.getAdditionalInfo().forEach((key, value) ->
                         updateValueNullable(value, oldAdditionalInfo.get(key),
-                            newValue -> oldAdditionalInfo.put(key, newValue)));
+                                newValue -> oldAdditionalInfo.put(key, newValue)));
                 request.setAdditionalInfo(oldAdditionalInfo);
             } else {
                 request.setAdditionalInfo(newFields.getAdditionalInfo());
@@ -135,7 +133,7 @@ public class RequestService {
 
     @Transactional
     public Response<Comment> addCommentToRequest(CommentCreate commentCreate) {
-        Comment comment =  commentRepository.save(modelsFactoryService.buildComment(commentCreate));
+        Comment comment = commentRepository.save(modelsFactoryService.buildComment(commentCreate));
         Optional<Request> requestWrapper = requestRepository.findById(commentCreate.getRequestId());
         if (requestWrapper.isEmpty()) {
             return Response.BAD(String.format("Запрос с id = %d не найден", commentCreate.getRequestId()));
@@ -174,4 +172,24 @@ public class RequestService {
                 requestWrapper.get().getRequestTypeId(), requestWrapper.get().getStatus(), newStatusId);
     }
 
+    public Response<RequestTransaction> addRequestTransaction(RequestTransaction transaction) {
+        Integer to = transaction.getTo();
+        if (!requestStatusRepository.existsById(to))
+            return Response.BAD(String.format("Статуса с id = %s не существует", to));
+
+        Integer from = transaction.getFrom();
+        if (!requestStatusRepository.existsById(from))
+            return Response.BAD(String.format("Статуса с id = %s не существует", to));
+
+        List<String> roles = requestRoleRepository.findAll().stream().map(RequestRole::getRusName)
+                .collect(Collectors.toList());
+        if (!roles.containsAll(transaction.getTrackerRoles()))
+            return Response.BAD(String.format("Статуса с id = %s не существует", to));
+
+        return Response.EXECUTE(() -> requestTransactionRepository.save(transaction));
+    }
+
+    public Response<List<RequestStatus>> getStatuses() {
+        return Response.EXECUTE(requestStatusRepository::findAll);
+    }
 }
