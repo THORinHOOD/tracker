@@ -25,3 +25,5 @@ public class Comment {
     Long userId;
 
 }
+
+// Привет, асгарище
