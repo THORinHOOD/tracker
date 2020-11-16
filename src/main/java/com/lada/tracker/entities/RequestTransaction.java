@@ -32,4 +32,7 @@ public class RequestTransaction {
     @Type(type = "list-array")
     @Column(name = "request_type_ids", columnDefinition = "int[]")
     private List<Integer> requestTypeIds;
+    @Type(type = "list-array")
+    @Column(name="tracker_roles", columnDefinition = "text[]")
+    private List<String> trackerRoles;
 }
