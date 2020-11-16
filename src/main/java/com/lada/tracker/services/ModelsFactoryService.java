@@ -48,12 +48,12 @@ public class ModelsFactoryService {
     public Comment buildComment(CommentCreate createRequest) {
         return Comment.builder()
                 .creation(currentTimestamp())
-                .userId(createRequest.getUserId())
+                .login(createRequest.getLogin())
                 .message(createRequest.getMessage())
                 .build();
     }
 
     private static Timestamp currentTimestamp() {
-        return new Timestamp(System.currentTimeMillis()); // TODO change
+        return new Timestamp(System.currentTimeMillis());
     }
 }

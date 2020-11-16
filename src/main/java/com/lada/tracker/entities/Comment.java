@@ -21,8 +21,7 @@ public class Comment {
     Long id;
     Timestamp creation;
     String message;
-    @Column(name = "user_id")
-    Long userId;
+    String login;
 
 }
 

@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class CommentCreate {
     private String message;
-    private Long userId;
+    private String login;
     private Long requestId;
 }
