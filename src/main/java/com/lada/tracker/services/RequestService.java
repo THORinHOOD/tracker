@@ -47,6 +47,14 @@ public class RequestService {
                 .filter(status -> status.getRequestTypeIds().contains(requestTypeId));
     }
 
+    /**
+     * Фильтрация канабан доски по содержимому реквеста
+     * @param requestTypeId Тип реквеста
+     * @param bodyFilter Строка, по которой ведется поиск
+     * @param after
+     * @param before
+     * @return результат фильтрации
+     */
     public Response<List<KanbanColumn>> getKanbanBoardFiltered(Integer requestTypeId, String bodyFilter,
                                                                Timestamp after, Timestamp before) {
         if (requestTypeId == null) {
@@ -76,6 +84,11 @@ public class RequestService {
                 .collect(Collectors.toList()));
     }
 
+    /**
+     * Добавление полей к реквесту
+     * @param newFields новые поля на добавление
+     * @return обновленная сущность реквеста
+     */
     public Response<Request> changeRequest(RequestDtoWithId newFields) {
         Optional<Request> requestWrapper = requestRepository.findById(newFields.getId());
         if (requestWrapper.isEmpty()) {
@@ -147,6 +160,12 @@ public class RequestService {
         return Response.OK(comment);
     }
 
+    /**
+     * Обновление статуса реквеста
+     * @param requestId уникальный id реквеста
+     * @param newStatusId новый статус реквеста
+     * @return
+     */
     public Response<Request> changeRequestStatus(long requestId, int newStatusId) {
         Optional<Request> requestWrapper = requestRepository.findById(requestId);
         if (requestWrapper.isEmpty()) {
@@ -172,6 +191,11 @@ public class RequestService {
                 requestWrapper.get().getRequestTypeId(), requestWrapper.get().getStatus(), newStatusId);
     }
 
+    /**
+     * Добавление пайплайна перехода реквестов по канбан доске
+     * @param transaction сущность нового пайплайна
+     * @return Новый объект перехода
+     */
     public Response<RequestTransaction> addRequestTransaction(RequestTransaction transaction) {
         Integer to = transaction.getTo();
         if (!requestStatusRepository.existsById(to))

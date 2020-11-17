@@ -21,6 +21,11 @@ public class ModelsFactoryService {
         this.requestStatusRepository = requestStatusRepository;
     }
 
+    /**
+     * Получение стартового статуса для пайплайна реквестов
+     * @param requestTypeId
+     * @return
+     */
     private Optional<RequestStatus> getStarterStatus(int requestTypeId) {
         return requestStatusRepository.findAll().stream()
                     .filter(status -> status.getRequestTypeIds().contains(requestTypeId) &&
@@ -28,6 +33,11 @@ public class ModelsFactoryService {
                     .findFirst();
     }
 
+    /**
+     * Построение нового реквеста
+     * @param createRequest реквеста на добавление
+     * @return объект реквеста
+     */
     public Response<Request> buildRequest(RequestDto createRequest) {
         Timestamp currentTime = currentTimestamp();
         Optional<RequestStatus> startRequestStatus = getStarterStatus(createRequest.getRequestType());
